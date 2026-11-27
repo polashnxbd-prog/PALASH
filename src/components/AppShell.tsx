@@ -47,9 +47,15 @@ const NAV_ITEMS: Array<{
 ];
 
 export function AppShell({ activeSection, onNavigate, children }: AppShellProps) {
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile, isAdmin, secondsUntilRefill, refillingCredits, signOut } = useAuth();
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const formatCountdown = (totalSec: number) => {
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   const toggleTheme = () => {
     const next = !darkMode;
@@ -100,7 +106,7 @@ export function AppShell({ activeSection, onNavigate, children }: AppShellProps)
 
         {/* Bottom Sidebar Summary */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 space-y-3">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>Voice Cloning</span>
               <span className="font-medium text-emerald-600 dark:text-emerald-400">0 Credits · Free</span>
@@ -108,7 +114,17 @@ export function AppShell({ activeSection, onNavigate, children }: AppShellProps)
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>TTS Credits</span>
               <span className="font-mono tabular-nums font-medium text-slate-900 dark:text-slate-100">
-                {(profile?.credits ?? 0).toLocaleString()}
+                {(profile?.credits ?? 0).toLocaleString()} / 10,000
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span>Auto-Refill (30m)</span>
+              <span className="font-mono tabular-nums text-indigo-600 dark:text-indigo-400">
+                {refillingCredits
+                  ? 'Refilling...'
+                  : (profile?.credits ?? 0) >= 10000
+                  ? 'Full (10,000)'
+                  : `In ${formatCountdown(secondsUntilRefill)}`}
               </span>
             </div>
           </div>

@@ -19,10 +19,14 @@ interface DashboardPageProps {
 }
 
 export function DashboardPage({ onNavigate }: DashboardPageProps) {
-  const { profile, voiceProfiles, generations } = useAuth();
+  const { profile, voiceProfiles, generations, secondsUntilRefill, refillingCredits } = useAuth();
   const [adapters, setAdapters] = useState<EngineAdapterStatus[]>([]);
   const [anyEngineConnected, setAnyEngineConnected] = useState(false);
   const [loadingEngine, setLoadingEngine] = useState(true);
+
+  const mins = Math.floor(secondsUntilRefill / 60);
+  const secs = secondsUntilRefill % 60;
+  const refillTimerLabel = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   useEffect(() => {
     let active = true;
@@ -146,7 +150,13 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           <div className="text-2xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
             {(profile?.credits ?? 0).toLocaleString()}
           </div>
-          <div className="text-xs text-emerald-600 dark:text-emerald-400">Cloning: 0 credits</div>
+          <div className="text-xs text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
+            {refillingCredits
+              ? 'Refilling to 10,000...'
+              : (profile?.credits ?? 0) >= 10000
+              ? '10,000 Auto-Refill (30m) · Ready'
+              : `Auto-refill 10,000 in ${refillTimerLabel}`}
+          </div>
         </div>
 
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11151E] p-5 space-y-1">

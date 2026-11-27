@@ -14,8 +14,9 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
   auth,
   db,
@@ -31,6 +32,9 @@ import type {
   VoiceProfile,
 } from '../types/voicelab';
 
+export const CREDIT_REFILL_CAP = 10000;
+export const CREDIT_REFILL_INTERVAL_MS = 30 * 60 * 1000;
+
 interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   profile: UserProfile | null;
@@ -41,6 +45,8 @@ interface AuthContextValue {
   libraryVoices: LibraryVoice[];
   favoriteIds: Set<string>;
   appSettings: AppSettings;
+  secondsUntilRefill: number;
+  refillingCredits: boolean;
   getIdToken: () => Promise<string | null>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -137,6 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [libraryVoices, setLibraryVoices] = useState<LibraryVoice[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [secondsUntilRefill, setSecondsUntilRefill] = useState<number>(CREDIT_REFILL_INTERVAL_MS / 1000);
+  const [refillingCredits, setRefillingCredits] = useState(false);
+  const refillAttemptRef = useRef<number>(0);
 
   const isAdmin = Boolean(
     firebaseUser?.emailVerified && firebaseUser?.email?.toLowerCase() === ADMIN_EMAIL
@@ -195,11 +204,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: user.email || '',
             photoURL: user.photoURL || '',
             plan: 'free',
-            credits: 1000,
+            credits: CREDIT_REFILL_CAP,
             preferredLanguage: 'bn-BD',
             totalGenerations: 0,
             totalDownloads: 0,
             suspended: false,
+            lastCreditRefillAt: serverTimestamp(),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
@@ -332,6 +342,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [firebaseUser]);
 
+  // Real-time 30-minute auto-refill countdown & atomic 10,000-credit replacement
+  useEffect(() => {
+    if (!firebaseUser || !profile) {
+      setSecondsUntilRefill(CREDIT_REFILL_INTERVAL_MS / 1000);
+      return;
+    }
+
+    const uid = firebaseUser.uid;
+
+    const checkAndRefill = async () => {
+      const now = Date.now();
+      const lastRefillMs = profile.lastCreditRefillAt?.toMillis?.() ?? 0;
+      const nextRefillMs = lastRefillMs > 0 ? lastRefillMs + CREDIT_REFILL_INTERVAL_MS : now;
+      const remainingSec = Math.max(0, Math.ceil((nextRefillMs - now) / 1000));
+      setSecondsUntilRefill(remainingSec);
+
+      // Wait until the 30-minute interval has elapsed (+3s server clock tolerance when lastRefillMs exists)
+      const dueWithSkewGuard =
+        lastRefillMs === 0 || now >= lastRefillMs + CREDIT_REFILL_INTERVAL_MS + 3000;
+
+      if (
+        dueWithSkewGuard &&
+        profile.credits < CREDIT_REFILL_CAP &&
+        now - refillAttemptRef.current > 8000
+      ) {
+        refillAttemptRef.current = now;
+        setRefillingCredits(true);
+        try {
+          const refillDelta = Math.max(1, CREDIT_REFILL_CAP - profile.credits);
+          const batch = writeBatch(db);
+          batch.update(doc(db, 'users', uid), {
+            credits: CREDIT_REFILL_CAP,
+            lastCreditRefillAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+          batch.set(doc(collection(db, 'creditTransactions')), {
+            ownerId: uid,
+            type: 'auto_refill',
+            amount: refillDelta,
+            description: 'Auto-refill to 10,000 credits (30-min cycle)',
+            createdAt: serverTimestamp(),
+          });
+          await batch.commit();
+        } catch (err) {
+          console.warn('Credit auto-refill pending server time check:', err);
+        } finally {
+          setRefillingCredits(false);
+        }
+      }
+    };
+
+    void checkAndRefill();
+    const timer = window.setInterval(() => {
+      void checkAndRefill();
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [firebaseUser, profile]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -344,6 +413,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         libraryVoices,
         favoriteIds,
         appSettings,
+        secondsUntilRefill,
+        refillingCredits,
         getIdToken,
         signInWithGoogle,
         signOut,

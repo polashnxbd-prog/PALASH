@@ -15,6 +15,7 @@
         "totalGenerations": { "type": "number" },
         "totalDownloads": { "type": "number" },
         "suspended": { "type": "boolean" },
+        "lastCreditRefillAt": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -116,7 +117,7 @@
       "type": "object",
       "properties": {
         "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
-        "type": { "type": "string", "enum": ["signup_bonus", "generation_debit", "refund", "admin_adjustment"] },
+        "type": { "type": "string", "enum": ["signup_bonus", "generation_debit", "auto_refill", "refund", "admin_adjustment"] },
         "amount": { "type": "number" },
         "description": { "type": "string", "maxLength": 200 },
         "referenceId": { "type": "string", "maxLength": 128 },

@@ -14,6 +14,8 @@ export interface BackgroundJob {
   title: string;
   engineAdapterId?: string;
   message: string;
+  audioId?: string;
+  audioUrl?: string;
   createdAt: string;
   updatedAt: string;
   retries: number;
@@ -42,7 +44,11 @@ class InMemoryJobQueue {
   findByIdempotency(ownerId: string, key?: string): BackgroundJob | undefined {
     if (!key) return undefined;
     const jobId = this.idempotencyIndex.get(`${ownerId}:${key}`);
-    return jobId ? this.jobs.get(jobId) : undefined;
+    const job = jobId ? this.jobs.get(jobId) : undefined;
+    if (!job || job.status === 'failed' || job.status === 'awaiting_engine') {
+      return undefined;
+    }
+    return job;
   }
 
   createJob(params: {
@@ -54,6 +60,8 @@ class InMemoryJobQueue {
     message: string;
     idempotencyKey?: string;
     engineAdapterId?: string;
+    audioId?: string;
+    audioUrl?: string;
   }): BackgroundJob {
     const now = new Date().toISOString();
     const job: BackgroundJob = {
@@ -66,12 +74,14 @@ class InMemoryJobQueue {
       title: params.title,
       engineAdapterId: params.engineAdapterId,
       message: params.message,
+      audioId: params.audioId,
+      audioUrl: params.audioUrl,
       createdAt: now,
       updatedAt: now,
       retries: 0,
     };
     this.jobs.set(job.id, job);
-    if (params.idempotencyKey) {
+    if (params.idempotencyKey && params.status === 'completed') {
       this.idempotencyIndex.set(`${params.ownerId}:${params.idempotencyKey}`, job.id);
     }
     return job;

@@ -7,10 +7,14 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import type { CreditTransaction } from '../types/voicelab';
 
 export function BillingAndApiPage() {
-  const { firebaseUser, profile, appSettings } = useAuth();
+  const { firebaseUser, profile, appSettings, secondsUntilRefill, refillingCredits } = useAuth();
   const { notify } = useToast();
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [openApiJson, setOpenApiJson] = useState<string>('');
+
+  const mins = Math.floor(secondsUntilRefill / 60);
+  const secs = secondsUntilRefill % 60;
+  const refillTimerLabel = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -29,8 +33,12 @@ export function BillingAndApiPage() {
 
   useEffect(() => {
     fetch('/api/v1/openapi.json')
-      .then((r) => r.json())
-      .then((data) => setOpenApiJson(JSON.stringify(data, null, 2)))
+      .then(async (r) => {
+        const text = await r.text();
+        if (!text.trim() || text.trimStart().startsWith('<')) return;
+        const data = JSON.parse(text);
+        setOpenApiJson(JSON.stringify(data, null, 2));
+      })
       .catch(() => {});
   }, []);
 
@@ -39,7 +47,7 @@ export function BillingAndApiPage() {
       name: 'Free',
       audience: 'For individual creators',
       price: '$0 / mo',
-      credits: '1,000 starter credits',
+      credits: '10,000 credits · Auto-refill every 30 min',
       cloning: 'Unlimited Free Voice Cloning (0 credits)',
       features: 'Bangla & English TTS · Audio Studio DSP · Private samples',
       active: (profile?.plan || 'free') === 'free',
@@ -99,6 +107,16 @@ export function BillingAndApiPage() {
           <span>Active Credit Pricing Rules</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
+            <div className="text-slate-500 dark:text-slate-400">30-Min Auto-Refill</div>
+            <div className="font-mono font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5 tabular-nums">
+              {refillingCredits
+                ? 'Refilling 10,000...'
+                : (profile?.credits ?? 0) >= 10000
+                ? '10,000 / 10,000 Ready'
+                : `10,000 in ${refillTimerLabel}`}
+            </div>
+          </div>
           <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
             <div className="text-slate-500 dark:text-slate-400">Voice Cloning</div>
             <div className="font-mono font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
@@ -112,10 +130,6 @@ export function BillingAndApiPage() {
           <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
             <div className="text-slate-500 dark:text-slate-400">Voice Changer</div>
             <div className="font-mono font-semibold mt-0.5">{appSettings.voiceChangerCost ?? 20} credits</div>
-          </div>
-          <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3">
-            <div className="text-slate-500 dark:text-slate-400">AI Dubbing</div>
-            <div className="font-mono font-semibold mt-0.5">{appSettings.dubbingCost ?? 40} credits</div>
           </div>
         </div>
       </section>

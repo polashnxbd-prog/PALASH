@@ -24,6 +24,7 @@ export interface UserProfile {
   totalGenerations: number;
   totalDownloads: number;
   suspended: boolean;
+  lastCreditRefillAt?: Timestamp;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -85,7 +86,7 @@ export interface LibraryVoice {
 export interface CreditTransaction {
   id: string;
   ownerId: string;
-  type: 'signup_bonus' | 'generation_debit' | 'refund' | 'admin_adjustment';
+  type: 'signup_bonus' | 'generation_debit' | 'auto_refill' | 'refund' | 'admin_adjustment';
   amount: number;
   description: string;
   referenceId?: string;

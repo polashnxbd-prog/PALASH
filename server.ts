@@ -98,13 +98,18 @@ async function startServer() {
   });
 
   app.get('/api/v1/engines/status', async (_req, res) => {
-    const adapters = await voiceEngineManager.getAdaptersStatus();
-    const anyConnected = adapters.some((a) => a.status === 'connected');
-    res.json({
-      anyConnected,
-      adapters,
-      queue: jobQueue.getQueueMetrics(),
-    });
+    try {
+      const adapters = await voiceEngineManager.getAdaptersStatus();
+      const anyConnected = adapters.some((a) => a.status === 'connected');
+      res.json({
+        anyConnected,
+        adapters,
+        queue: jobQueue.getQueueMetrics(),
+      });
+    } catch (err) {
+      console.error('Engines status error:', err);
+      res.status(500).json({ error: 'Unable to inspect voice engine adapters.' });
+    }
   });
 
   // OpenAPI 3.0 Specification for future-ready Developer API
@@ -313,71 +318,106 @@ async function startServer() {
 
   // Text-to-Speech synthesis endpoint (honest engine routing)
   app.post('/api/v1/tts', requireAuth, async (req: AuthRequest, res) => {
-    const uid = req.user!.uid;
-    const { text, language, voiceId, voiceType, controls, idempotencyKey } = req.body || {};
+    try {
+      const uid = req.user!.uid;
+      if (!isValidSafeId(uid)) {
+        return res.status(400).json({ error: 'Invalid user identifier.' });
+      }
+      const { text, language, voiceId, voiceName, voiceType, controls, idempotencyKey } = req.body || {};
 
-    if (typeof text !== 'string' || text.trim().length === 0) {
-      return res.status(400).json({ error: 'Please enter text to synthesize.' });
-    }
-    if (text.length > 10000) {
-      return res.status(400).json({ error: 'Text exceeds maximum 10,000 characters per job.' });
-    }
+      if (typeof text !== 'string' || text.trim().length === 0) {
+        return res.status(400).json({ error: 'Please enter text to synthesize.' });
+      }
+      if (text.length > 10000) {
+        return res.status(400).json({ error: 'Text exceeds maximum 10,000 characters per job.' });
+      }
 
-    const existingJob = jobQueue.findByIdempotency(uid, typeof idempotencyKey === 'string' ? idempotencyKey : undefined);
-    if (existingJob) {
-      return res.status(200).json({ deduplicated: true, job: existingJob });
-    }
+      const existingJob = jobQueue.findByIdempotency(uid, typeof idempotencyKey === 'string' ? idempotencyKey : undefined);
+      if (existingJob && existingJob.audioUrl) {
+        return res.status(200).json({
+          deduplicated: true,
+          connected: true,
+          status: existingJob.status,
+          audioId: existingJob.audioId,
+          audioUrl: existingJob.audioUrl,
+          job: existingJob,
+        });
+      }
 
-    const sampleRecord = typeof voiceId === 'string' ? Array.from(sampleRegistry.values()).find((s) => s.sampleId === voiceId) : undefined;
-    const result = await voiceEngineManager.synthesizeSpeech({
-      text: text.trim(),
-      language: String(language || 'bn-BD'),
-      voiceId: String(voiceId || 'default'),
-      voiceType: voiceType === 'cloned' || voiceType === 'designed' ? voiceType : 'library',
-      sampleFilePath: sampleRecord?.filePath,
-      controls: controls && typeof controls === 'object' ? controls : {},
-    });
+      const sampleRecord = typeof voiceId === 'string' ? Array.from(sampleRegistry.values()).find((s) => s.sampleId === voiceId) : undefined;
+      const result = await voiceEngineManager.synthesizeSpeech({
+        text: text.trim(),
+        language: String(language || 'bn-BD'),
+        voiceId: String(voiceId || 'default'),
+        voiceName: typeof voiceName === 'string' ? voiceName : undefined,
+        voiceType: voiceType === 'cloned' || voiceType === 'designed' ? voiceType : 'library',
+        sampleFilePath: sampleRecord?.filePath,
+        controls: controls && typeof controls === 'object' ? controls : {},
+      });
 
-    const job = jobQueue.createJob({
-      id: `tts_${crypto.randomBytes(8).toString('hex')}`,
-      ownerId: uid,
-      type: 'tts',
-      title: `TTS (${String(language || 'bn-BD')}): ${text.trim().slice(0, 42)}`,
-      status: result.status === 'completed' ? 'completed' : result.status === 'failed' ? 'failed' : 'awaiting_engine',
-      engineAdapterId: result.adapterId,
-      idempotencyKey: typeof idempotencyKey === 'string' ? idempotencyKey : undefined,
-      message: result.message,
-    });
+      if (!result.connected || !result.audioBuffer) {
+        const job = jobQueue.createJob({
+          id: `tts_${crypto.randomBytes(8).toString('hex')}`,
+          ownerId: uid,
+          type: 'tts',
+          title: `TTS (${String(language || 'bn-BD')}): ${text.trim().slice(0, 42)}`,
+          status: result.status === 'failed' ? 'failed' : 'awaiting_engine',
+          engineAdapterId: result.adapterId,
+          idempotencyKey: typeof idempotencyKey === 'string' ? idempotencyKey : undefined,
+          message: result.message,
+        });
 
-    if (!result.connected || !result.audioBuffer) {
-      return res.status(503).json({
-        connected: false,
-        status: result.status,
-        error: result.message,
-        creditsDeducted: 0,
+        return res.status(result.connected ? 502 : 503).json({
+          connected: result.connected,
+          status: result.status,
+          error: result.message,
+          creditsDeducted: 0,
+          job,
+        });
+      }
+
+      const audioId = `aud_${crypto.randomBytes(10).toString('hex')}`;
+      const userGenDir = resolveConfinedPath(GENERATED_DIR, uid);
+      if (!userGenDir) {
+        return res.status(400).json({ error: 'Invalid generated audio path.' });
+      }
+      fs.mkdirSync(userGenDir, { recursive: true });
+      const outPath = resolveConfinedPath(userGenDir, `${audioId}.wav`);
+      if (!outPath) {
+        return res.status(400).json({ error: 'Invalid output file path.' });
+      }
+      fs.writeFileSync(outPath, result.audioBuffer);
+
+      const audioUrl = `/api/v1/audio/${audioId}`;
+      const job = jobQueue.createJob({
+        id: `tts_${crypto.randomBytes(8).toString('hex')}`,
+        ownerId: uid,
+        type: 'tts',
+        title: `TTS (${String(language || 'bn-BD')}): ${text.trim().slice(0, 42)}`,
+        status: 'completed',
+        engineAdapterId: result.adapterId,
+        idempotencyKey: typeof idempotencyKey === 'string' ? idempotencyKey : undefined,
+        message: result.message,
+        audioId,
+        audioUrl,
+      });
+
+      return res.status(200).json({
+        connected: true,
+        status: 'completed',
+        audioId,
+        audioUrl,
         job,
       });
+    } catch (err) {
+      console.error('TTS synthesis route error:', err);
+      return res.status(500).json({
+        connected: false,
+        status: 'failed',
+        error: 'Unable to process speech synthesis request right now. Zero credits were deducted.',
+        creditsDeducted: 0,
+      });
     }
-
-    const audioId = `aud_${crypto.randomBytes(10).toString('hex')}`;
-    const userGenDir = resolveConfinedPath(GENERATED_DIR, uid);
-    if (!userGenDir) {
-      return res.status(400).json({ error: 'Invalid generated audio path.' });
-    }
-    fs.mkdirSync(userGenDir, { recursive: true });
-    const outPath = resolveConfinedPath(userGenDir, `${audioId}.wav`);
-    if (!outPath) {
-      return res.status(400).json({ error: 'Invalid output file path.' });
-    }
-    fs.writeFileSync(outPath, result.audioBuffer);
-
-    return res.status(200).json({
-      connected: true,
-      status: 'completed',
-      audioId,
-      audioUrl: `/api/v1/audio/${audioId}`,
-      job,
-    });
   });
 
   // Serve generated audio strictly to owner
@@ -410,26 +450,59 @@ async function startServer() {
 
   // Admin infrastructure metrics & engine health test
   app.get('/api/v1/admin/metrics', requireAuth, requireAdmin, async (_req, res) => {
-    const adapters = await voiceEngineManager.getAdaptersStatus();
-    let totalSampleBytes = 0;
-    for (const item of sampleRegistry.values()) {
-      try {
-        if (fs.existsSync(item.filePath)) {
-          totalSampleBytes += fs.statSync(item.filePath).size;
+    try {
+      const adapters = await voiceEngineManager.getAdaptersStatus();
+      let totalSampleBytes = 0;
+      for (const item of sampleRegistry.values()) {
+        try {
+          if (fs.existsSync(item.filePath)) {
+            totalSampleBytes += fs.statSync(item.filePath).size;
+          }
+        } catch {
+          // Skip unreadable file
         }
-      } catch {
-        // Skip unreadable file
       }
-    }
 
-    res.json({
-      queue: jobQueue.getQueueMetrics(),
-      storage: {
-        storedSamplesCount: sampleRegistry.size,
-        totalSampleMb: Number((totalSampleBytes / (1024 * 1024)).toFixed(2)),
-      },
-      adapters,
-    });
+      res.json({
+        queue: jobQueue.getQueueMetrics(),
+        storage: {
+          storedSamplesCount: sampleRegistry.size,
+          totalSampleMb: Number((totalSampleBytes / (1024 * 1024)).toFixed(2)),
+        },
+        adapters,
+      });
+    } catch (err) {
+      console.error('Admin metrics error:', err);
+      res.status(500).json({ error: 'Failed to collect engine metrics.' });
+    }
+  });
+
+  // Explicit API 404 JSON boundary so unmatched /api/* never falls through to Vite HTML
+  app.use('/api', (_req, res) => {
+    return res.status(404).json({ error: 'API endpoint not found.' });
+  });
+
+  // Express JSON error boundary (catches malformed JSON bodies, Multer upload errors, etc.)
+  app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+    if (req.path.startsWith('/api')) {
+      const status =
+        typeof (err as { status?: number })?.status === 'number'
+          ? (err as { status: number }).status
+          : (err as { code?: string })?.code === 'LIMIT_FILE_SIZE'
+          ? 413
+          : 500;
+      const message =
+        (err as { code?: string })?.code === 'LIMIT_FILE_SIZE'
+          ? `Audio file exceeds maximum ${maxUploadMb} MB limit.`
+          : err instanceof Error
+          ? err.message
+          : 'Internal server error.';
+      return res.status(status).json({ error: message });
+    }
+    return next(err);
   });
 
   // Vite dev middleware or static production build
@@ -451,6 +524,14 @@ async function startServer() {
     console.log(`VoiceLab AI Studio server listening on http://0.0.0.0:${PORT}`);
   });
 }
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Promise Rejection in VoiceLab server:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception in VoiceLab server:', err);
+});
 
 startServer().catch((err) => {
   console.error('Failed to start VoiceLab AI Studio server:', err);

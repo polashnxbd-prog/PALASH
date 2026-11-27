@@ -2,7 +2,7 @@
 
 ## 1. Data Invariants
 1. **User Isolation & PII Protection**: A user document at `/users/{userId}` may only be read or updated by `request.auth.uid == userId` or a verified admin (`isAdmin()`). Unverified emails cannot write data.
-2. **Self-Elevation Prevention**: Users cannot assign themselves admin status, upgrade their subscription `plan`, unsuspend themselves, or grant themselves positive credits. Initial user signup strictly enforces `plan == 'free'`, `credits == 1000`, `suspended == false`.
+2. **Self-Elevation & Credit Cooldown Enforcement**: Users cannot assign themselves admin status, upgrade their subscription `plan`, unsuspend themselves, or inflate credits arbitrarily. Initial user signup strictly enforces `plan == 'free'`, `credits == 10000`, `suspended == false`, and `lastCreditRefillAt == request.time`. Auto-refill updates may only replace `credits` back to `10000` (when `existing().credits < 10000`) once at least 30 minutes (`duration.value(30, 'm')`) have elapsed since `lastCreditRefillAt`, with `lastCreditRefillAt == request.time`.
 3. **Unlimited Free Voice Cloning**: Voice cloning profiles at `/voiceProfiles/{voiceId}` never require credit deductions, always mandate `consentConfirmed == true` and `ownerId == request.auth.uid` on creation, and cannot be reassigned to another owner.
 4. **Immutable Consent Trail**: `/consentRecords/{recordId}` cannot be updated once created (`allow update: if false`).
 5. **Query Security**: All `allow list` rules on user-owned collections explicitly evaluate `resource.data.ownerId == request.auth.uid` (or `reporterId == request.auth.uid`), never delegating filtering solely to the client.
@@ -10,7 +10,7 @@
 
 ## 2. The "Dirty Dozen" Adversarial Test Payloads
 1. **Self-Admin Escalation**: Creating `/users/attacker` with `plan: "studio"`, `credits: 999999` -> **MUST FAIL** (`PERMISSION_DENIED`).
-2. **Credit Inflation Update**: Updating `/users/uid1` to increment `credits` from `1000` to `5000` as non-admin -> **MUST FAIL**.
+2. **Early Credit Refill Bypass**: Updating `/users/uid1` to reset `credits` to `10000` before 30 minutes have passed since `lastCreditRefillAt` -> **MUST FAIL**.
 3. **Shadow Ghost Field**: Updating `/voiceProfiles/v1` with `{ name: "My Voice", isAdminApproved: true }` -> **MUST FAIL** (`hasOnly` check).
 4. **Unverified Email Spoof**: Request with `token.email == "polashnxbd@gmail.com"` and `token.email_verified == false` calling admin route -> **MUST FAIL**.
 5. **Cross-User PII Read**: Authenticated `uid2` calling `get(/users/uid1)` -> **MUST FAIL**.

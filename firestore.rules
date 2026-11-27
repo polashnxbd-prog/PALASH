@@ -43,7 +43,8 @@ service cloud.firestore {
       ])
       && data.keys().hasOnly([
         'uid', 'name', 'email', 'photoURL', 'plan', 'credits', 'preferredLanguage',
-        'totalGenerations', 'totalDownloads', 'suspended', 'createdAt', 'updatedAt'
+        'totalGenerations', 'totalDownloads', 'suspended', 'lastCreditRefillAt',
+        'createdAt', 'updatedAt'
       ])
       && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128
       && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
@@ -55,6 +56,7 @@ service cloud.firestore {
       && data.totalGenerations is number && data.totalGenerations >= 0
       && data.totalDownloads is number && data.totalDownloads >= 0
       && data.suspended is bool
+      && (!('lastCreditRefillAt' in data) || data.lastCreditRefillAt is timestamp)
       && data.createdAt is timestamp
       && data.updatedAt is timestamp;
     }
@@ -161,7 +163,7 @@ service cloud.firestore {
       return data.keys().hasAll(['ownerId', 'type', 'amount', 'description', 'createdAt'])
       && data.keys().hasOnly(['ownerId', 'type', 'amount', 'description', 'referenceId', 'createdAt'])
       && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
-      && data.type in ['signup_bonus', 'generation_debit', 'refund', 'admin_adjustment']
+      && data.type in ['signup_bonus', 'generation_debit', 'auto_refill', 'refund', 'admin_adjustment']
       && data.amount is number && data.amount >= -1000000 && data.amount <= 1000000
       && data.description is string && data.description.size() >= 1 && data.description.size() <= 200
       && (!('referenceId' in data) || (data.referenceId is string && data.referenceId.size() <= 128))
@@ -242,10 +244,11 @@ service cloud.firestore {
         && isValidUser(incoming())
         && incoming().uid == request.auth.uid
         && incoming().plan == 'free'
-        && incoming().credits == 1000
+        && incoming().credits == 10000
         && incoming().suspended == false
         && incoming().totalGenerations == 0
         && incoming().totalDownloads == 0
+        && incoming().lastCreditRefillAt == request.time
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time;
       allow update: if isVerifiedUser()
@@ -263,6 +266,17 @@ service cloud.firestore {
             && incoming().diff(existing()).affectedKeys().hasOnly([
               'name', 'preferredLanguage', 'photoURL',
               'totalGenerations', 'totalDownloads', 'credits', 'updatedAt'
+            ])
+          ) || (
+            request.auth.uid == userId
+            && incoming().plan == existing().plan
+            && incoming().suspended == existing().suspended
+            && incoming().credits == 10000
+            && existing().credits < 10000
+            && incoming().lastCreditRefillAt == request.time
+            && (!('lastCreditRefillAt' in existing()) || request.time >= existing().lastCreditRefillAt + duration.value(30, 'm'))
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'credits', 'lastCreditRefillAt', 'updatedAt'
             ])
           )
         );
@@ -376,6 +390,13 @@ service cloud.firestore {
             incoming().ownerId == request.auth.uid
             && incoming().type == 'generation_debit'
             && incoming().amount <= 0
+          ) || (
+            incoming().ownerId == request.auth.uid
+            && incoming().type == 'auto_refill'
+            && incoming().amount > 0
+            && incoming().amount <= 10000
+            && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.credits == 10000
+            && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.lastCreditRefillAt == request.time
           )
         );
       allow update, delete: if isAdmin() && isValidId(txId);

@@ -12,7 +12,7 @@ import { AudioPlayer } from '../components/AudioPlayer';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { fetchEnginesStatus, submitTtsGeneration } from '../lib/api';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import type { EngineAdapterStatus } from '../types/voicelab';
 
 interface TextToSpeechPageProps {
@@ -45,8 +45,20 @@ const SAMPLE_ENGLISH_SCRIPT =
   'Welcome to VoiceLab AI Studio. With modular self-hosted AI models and unlimited free voice cloning, creators can craft expressive narration in both Bangladeshi Bengali and English.';
 
 export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) {
-  const { firebaseUser, profile, voiceProfiles, libraryVoices, appSettings, getIdToken } = useAuth();
+  const {
+    firebaseUser,
+    profile,
+    voiceProfiles,
+    libraryVoices,
+    appSettings,
+    secondsUntilRefill,
+    getIdToken,
+  } = useAuth();
   const { notify } = useToast();
+
+  const refillMins = Math.floor(secondsUntilRefill / 60);
+  const refillSecs = secondsUntilRefill % 60;
+  const refillCountdown = `${String(refillMins).padStart(2, '0')}:${String(refillSecs).padStart(2, '0')}`;
 
   const [text, setText] = useState('');
   const [language, setLanguage] = useState<'bn-BD' | 'en-US' | 'multilingual'>('bn-BD');
@@ -86,14 +98,33 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
     return [...cloned, ...lib];
   }, [voiceProfiles, libraryVoices]);
 
+  const [userPickedVoice, setUserPickedVoice] = useState(false);
+
+  const cloningWorkerConnected = adapters.some(
+    (a) => a.id === 'self_hosted_fastapi_worker' && a.status === 'connected'
+  );
+
   useEffect(() => {
     if (preselectedVoiceId) {
       const match = combinedVoices.find((v) => v.docId === preselectedVoiceId);
-      if (match) setSelectedVoiceKey(match.key);
-    } else if (!selectedVoiceKey && combinedVoices.length > 0) {
-      setSelectedVoiceKey(combinedVoices[0].key);
+      if (match) {
+        setSelectedVoiceKey(match.key);
+        setUserPickedVoice(true);
+      }
+      return;
     }
-  }, [preselectedVoiceId, combinedVoices, selectedVoiceKey]);
+
+    if (combinedVoices.length === 0) return;
+
+    if (!userPickedVoice) {
+      const preferredVoice = cloningWorkerConnected
+        ? combinedVoices[0]
+        : combinedVoices.find((v) => v.type === 'library') || combinedVoices[0];
+      if (preferredVoice && preferredVoice.key !== selectedVoiceKey) {
+        setSelectedVoiceKey(preferredVoice.key);
+      }
+    }
+  }, [preselectedVoiceId, combinedVoices, selectedVoiceKey, cloningWorkerConnected, userPickedVoice]);
 
   useEffect(() => {
     fetchEnginesStatus()
@@ -152,6 +183,7 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
         text: text.trim(),
         language,
         voiceId: selectedVoice?.id || 'default',
+        voiceName: selectedVoice?.name,
         voiceType: selectedVoice?.type || 'library',
         controls: {
           stability,
@@ -160,16 +192,22 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
           pitch,
           styleIntensity,
           emotion,
+          pauseControl,
+          pronunciationNote: pronunciationNote.trim() || undefined,
         },
         idempotencyKey,
       });
 
       if (!res.connected || !res.audioUrl) {
-        setEngineAlert(
+        const reason =
           res.error ||
-            'AI Text-to-Speech engine is not connected yet. Configure VOICE_ENGINE_URL (FastAPI GPU worker) to synthesize real audio. Zero credits were deducted.'
+          'AI Text-to-Speech engine is not connected yet. Configure VOICE_ENGINE_URL or GEMINI_API_KEY in server secrets. Zero credits were deducted.';
+        setEngineAlert(reason);
+        notify(
+          res.status === 'failed' ? 'TTS Engine Error' : 'AI TTS Engine Not Connected',
+          res.status === 'failed' ? 'error' : 'info',
+          res.status === 'failed' ? reason : 'Zero credits deducted.'
         );
-        notify('AI TTS Engine Not Connected', 'info', 'Zero credits deducted.');
         return;
       }
 
@@ -179,16 +217,16 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
       try {
         await addDoc(collection(db, 'audioGenerations'), {
           ownerId: firebaseUser.uid,
-          title: text.trim().slice(0, 60),
+          title: text.trim().slice(0, 60) || 'Untitled Speech',
           tool: 'tts',
-          voiceId: selectedVoice?.docId || '',
-          voiceName: selectedVoice?.name || 'Default Voice',
-          language,
+          voiceId: (selectedVoice?.docId || '').slice(0, 128),
+          voiceName: (selectedVoice?.name || 'Default Voice').slice(0, 120),
+          language: language.slice(0, 32),
           textPreview: text.trim().slice(0, 200),
           durationSec: 0,
           creditsCost: estimatedCredits,
           status: 'completed',
-          audioUrl: res.audioUrl,
+          audioUrl: res.audioUrl.slice(0, 500),
           isFavorite: false,
           createdAt: serverTimestamp(),
         });
@@ -204,11 +242,11 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
           type: 'generation_debit',
           amount: -estimatedCredits,
           description: `TTS synthesis (${charCount} chars)`,
-          referenceId: res.audioId || '',
+          referenceId: (res.audioId || '').slice(0, 128),
           createdAt: serverTimestamp(),
         });
       } catch (fsErr) {
-        handleFirestoreError(fsErr, OperationType.WRITE, 'audioGenerations');
+        console.error('History save notice:', fsErr);
       }
 
       notify('Speech generated successfully', 'success');
@@ -233,7 +271,7 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
           </p>
         </div>
 
-        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums whitespace-nowrap">
           Engine:{' '}
           <span
             className={
@@ -249,7 +287,7 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3 text-xs text-amber-700 dark:text-amber-300">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold">Honest Engine Status:</span> No self-hosted AI TTS worker (<code className="font-mono">VOICE_ENGINE_URL</code>) or external TTS API is connected yet. You can prepare scripts, select cloned or library voices, and configure controls—clicking Generate checks the backend honestly without simulating fake audio or deducting credits.
+            <span className="font-semibold">Honest Engine Status:</span> No AI TTS worker (<code className="font-mono">VOICE_ENGINE_URL</code>, <code className="font-mono">EXTERNAL_TTS_ENDPOINT</code>, or <code className="font-mono">GEMINI_API_KEY</code>) is configured yet. Scripts and voice controls work now; clicking Generate checks the backend honestly without faking audio or deducting credits.
           </div>
         </div>
       )}
@@ -257,19 +295,19 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
       <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* Script Editor */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11151E] p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#11151E] p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-0.5">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setLanguage('bn-BD');
                     setText(SAMPLE_BANGLA_SCRIPT);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap shrink-0"
                 >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Load Bangla Script</span>
+                  <FileText className="w-3.5 h-3.5 shrink-0" />
+                  <span>Bangla Sample</span>
                 </button>
                 <button
                   type="button"
@@ -277,10 +315,10 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
                     setLanguage('en-US');
                     setText(SAMPLE_ENGLISH_SCRIPT);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap shrink-0"
                 >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Load English Script</span>
+                  <FileText className="w-3.5 h-3.5 shrink-0" />
+                  <span>English Sample</span>
                 </button>
               </div>
 
@@ -288,15 +326,15 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
                 type="button"
                 onClick={() => setText('')}
                 disabled={!text}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:text-rose-500 disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs text-slate-500 hover:text-rose-500 disabled:opacity-40 whitespace-nowrap shrink-0"
               >
-                <Eraser className="w-3.5 h-3.5" />
+                <Eraser className="w-3.5 h-3.5 shrink-0" />
                 <span>Clear</span>
               </button>
             </div>
 
             <textarea
-              rows={10}
+              rows={9}
               maxLength={10000}
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -304,17 +342,23 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
               className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090B10] p-4 text-sm sm:text-base leading-relaxed text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
               <div className="font-mono tabular-nums">
                 {charCount.toLocaleString()} / 10,000 chars · {wordCount.toLocaleString()} words
               </div>
               <div className="font-mono tabular-nums">
-                Estimated Cost: <span className="font-semibold text-slate-900 dark:text-white">{estimatedCredits} credits</span>
+                Cost: <span className="font-semibold text-slate-900 dark:text-white">{estimatedCredits}</span> · Balance:{' '}
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {(profile?.credits ?? 0).toLocaleString()}
+                </span>
+                {(profile?.credits ?? 0) < 10000 && (
+                  <span className="text-indigo-500 dark:text-indigo-400"> (Refill in {refillCountdown})</span>
+                )}
               </div>
             </div>
 
             {engineAlert && (
-              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-300">
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
                 {engineAlert}
               </div>
             )}
@@ -324,12 +368,12 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
                 type="button"
                 onClick={handleGenerate}
                 disabled={generating || !text.trim()}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium transition-colors whitespace-nowrap"
               >
                 {generating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 ) : (
-                  <Volume2 className="w-4 h-4" />
+                  <Volume2 className="w-4 h-4 shrink-0" />
                 )}
                 <span>{generating ? 'Synthesizing...' : 'Generate Speech'}</span>
               </button>
@@ -361,15 +405,58 @@ export function TextToSpeechPage({ preselectedVoiceId }: TextToSpeechPageProps) 
             </label>
             <select
               value={selectedVoiceKey}
-              onChange={(e) => setSelectedVoiceKey(e.target.value)}
+              onChange={(e) => {
+                setUserPickedVoice(true);
+                setSelectedVoiceKey(e.target.value);
+              }}
               className="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090B10] text-xs text-slate-900 dark:text-white"
             >
-              {combinedVoices.map((v) => (
-                <option key={v.key} value={v.key}>
-                  {v.name}
-                </option>
-              ))}
+              <optgroup label={anyConnected ? 'Voice Library (Ready)' : 'Voice Library'}>
+                {combinedVoices
+                  .filter((v) => v.type === 'library')
+                  .map((v) => (
+                    <option key={v.key} value={v.key}>
+                      {v.name}
+                    </option>
+                  ))}
+              </optgroup>
+              {combinedVoices.some((v) => v.type === 'cloned') && (
+                <optgroup
+                  label={
+                    cloningWorkerConnected
+                      ? 'My Cloned Voices (GPU Worker Connected)'
+                      : 'My Cloned Voices (Requires GPU Worker)'
+                  }
+                >
+                  {combinedVoices
+                    .filter((v) => v.type === 'cloned')
+                    .map((v) => (
+                      <option key={v.key} value={v.key}>
+                        {v.name}
+                      </option>
+                    ))}
+                </optgroup>
+              )}
             </select>
+            {!cloningWorkerConnected && selectedVoice?.type === 'cloned' && anyConnected && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] text-amber-700 dark:text-amber-300 flex items-center justify-between gap-2">
+                <span>Cloned voices require a GPU worker.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstLib = combinedVoices.find((v) => v.type === 'library');
+                    if (firstLib) {
+                      setUserPickedVoice(true);
+                      setSelectedVoiceKey(firstLib.key);
+                      setEngineAlert(null);
+                    }
+                  }}
+                  className="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 font-medium whitespace-nowrap shrink-0"
+                >
+                  Use Library Voice
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
