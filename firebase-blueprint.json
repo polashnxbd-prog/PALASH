@@ -1,0 +1,222 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered VoiceLab AI Studio user profile with plan, credits, and usage metrics.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "plan": { "type": "string", "enum": ["free", "creator", "pro", "studio"] },
+        "credits": { "type": "number" },
+        "preferredLanguage": { "type": "string", "enum": ["bn-BD", "en-US"] },
+        "totalGenerations": { "type": "number" },
+        "totalDownloads": { "type": "number" },
+        "suspended": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email", "plan", "credits", "preferredLanguage", "totalGenerations", "totalDownloads", "suspended", "createdAt", "updatedAt"]
+    },
+    "VoiceProfile": {
+      "title": "VoiceProfile",
+      "description": "User-owned cloned or designed voice profile (always 0 credits to clone).",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 500 },
+        "language": { "type": "string", "enum": ["bn-BD", "en-US", "multilingual"] },
+        "characteristics": { "type": "array" },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "sampleId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "sampleFileName": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "sampleDurationSec": { "type": "number" },
+        "sampleSizeBytes": { "type": "number" },
+        "sampleMimeType": { "type": "string", "maxLength": 100 },
+        "engineAdapterId": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["validating", "queued", "awaiting_engine", "completed", "failed"] },
+        "consentConfirmed": { "type": "boolean" },
+        "isFavorite": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "name", "language", "sampleId", "sampleFileName", "sampleDurationSec", "sampleSizeBytes", "status", "consentConfirmed", "isFavorite", "createdAt", "updatedAt"]
+    },
+    "ConsentRecord": {
+      "title": "ConsentRecord",
+      "description": "Immutable voice cloning ownership and authorization consent audit record.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "voiceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "speakerOwnership": { "type": "string", "enum": ["self", "authorized"] },
+        "consentTextVersion": { "type": "string", "maxLength": 40 },
+        "confirmedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "voiceId", "speakerOwnership", "consentTextVersion", "confirmedAt"]
+    },
+    "AudioGeneration": {
+      "title": "AudioGeneration",
+      "description": "Audio synthesis, conversion, dubbing, or studio export history record.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "tool": { "type": "string", "enum": ["tts", "voice_changer", "dubbing", "podcast", "sound_fx", "speech_enhance", "audio_studio"] },
+        "voiceId": { "type": "string", "maxLength": 128 },
+        "voiceName": { "type": "string", "maxLength": 120 },
+        "language": { "type": "string", "maxLength": 32 },
+        "textPreview": { "type": "string", "maxLength": 500 },
+        "durationSec": { "type": "number" },
+        "creditsCost": { "type": "number" },
+        "status": { "type": "string", "enum": ["queued", "processing", "awaiting_engine", "completed", "failed"] },
+        "audioUrl": { "type": "string", "maxLength": 500 },
+        "isFavorite": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "title", "tool", "voiceName", "language", "durationSec", "creditsCost", "status", "isFavorite", "createdAt"]
+    },
+    "LibraryVoice": {
+      "title": "LibraryVoice",
+      "description": "Admin-managed voice catalog entry in Voice Library.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 500 },
+        "language": { "type": "string", "maxLength": 40 },
+        "category": { "type": "string", "maxLength": 60 },
+        "gender": { "type": "string", "maxLength": 30 },
+        "style": { "type": "string", "maxLength": 60 },
+        "avatarUrl": { "type": "string", "maxLength": 500 },
+        "sampleUrl": { "type": "string", "maxLength": 500 },
+        "engineId": { "type": "string", "maxLength": 100 },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "description", "language", "category", "gender", "style", "isPublic", "createdAt", "updatedAt"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "User favorite mapping for Voice Library entries.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "libraryVoiceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "libraryVoiceId", "createdAt"]
+    },
+    "CreditTransaction": {
+      "title": "CreditTransaction",
+      "description": "Audit ledger for credit deductions, refunds, and admin adjustments.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "type": { "type": "string", "enum": ["signup_bonus", "generation_debit", "refund", "admin_adjustment"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string", "maxLength": 200 },
+        "referenceId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "type", "amount", "description", "createdAt"]
+    },
+    "AbuseReport": {
+      "title": "AbuseReport",
+      "description": "Voice cloning safety and unauthorized impersonation report.",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "targetVoiceId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "reason": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "details": { "type": "string", "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["open", "reviewed", "resolved"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reporterId", "targetVoiceId", "reason", "status", "createdAt", "updatedAt"]
+    },
+    "AppSetting": {
+      "title": "AppSetting",
+      "description": "Admin-managed billing costs, plans, and platform configuration.",
+      "type": "object",
+      "properties": {
+        "appName": { "type": "string", "maxLength": 100 },
+        "tagline": { "type": "string", "maxLength": 160 },
+        "maintenanceMode": { "type": "boolean" },
+        "cloningCostCredits": { "type": "number" },
+        "ttsCostPer1kChars": { "type": "number" },
+        "voiceDesignCost": { "type": "number" },
+        "voiceChangerCost": { "type": "number" },
+        "dubbingCost": { "type": "number" },
+        "soundFxCost": { "type": "number" },
+        "podcastCost": { "type": "number" },
+        "speechEnhanceCost": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["appName", "maintenanceMode", "cloningCostCredits", "ttsCostPer1kChars", "updatedAt"]
+    },
+    "AiEngine": {
+      "title": "AiEngine",
+      "description": "Modular AI voice engine adapter metadata (no secrets stored).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "providerType": { "type": "string", "enum": ["self_hosted_fastapi", "xtts_v2", "fish_speech", "f5_tts", "cosyvoice", "external_rest"] },
+        "capabilities": { "type": "array" },
+        "enabled": { "type": "boolean" },
+        "supportsBangla": { "type": "boolean" },
+        "supportsCloning": { "type": "boolean" },
+        "supportsEmotion": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["connected", "not_configured", "unreachable", "disabled"] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "providerType", "capabilities", "enabled", "supportsBangla", "supportsCloning", "supportsEmotion", "status", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Private user account profiles and credit balances."
+    },
+    "/voiceProfiles/{voiceId}": {
+      "schema": { "$ref": "#/entities/VoiceProfile" },
+      "description": "User-owned cloned and designed voice profiles."
+    },
+    "/consentRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/ConsentRecord" },
+      "description": "Immutable voice cloning consent audit logs."
+    },
+    "/audioGenerations/{generationId}": {
+      "schema": { "$ref": "#/entities/AudioGeneration" },
+      "description": "User audio generation and export history."
+    },
+    "/voiceLibrary/{libraryVoiceId}": {
+      "schema": { "$ref": "#/entities/LibraryVoice" },
+      "description": "Curated Voice Library catalog controlled by admin."
+    },
+    "/favorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/Favorite" },
+      "description": "User favorites for Voice Library entries."
+    },
+    "/creditTransactions/{txId}": {
+      "schema": { "$ref": "#/entities/CreditTransaction" },
+      "description": "Credit ledger records for generations and admin adjustments."
+    },
+    "/abuseReports/{reportId}": {
+      "schema": { "$ref": "#/entities/AbuseReport" },
+      "description": "Abuse and impersonation reports submitted by users."
+    },
+    "/appSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/AppSetting" },
+      "description": "Global platform and billing settings configured by admin."
+    },
+    "/aiEngines/{engineId}": {
+      "schema": { "$ref": "#/entities/AiEngine" },
+      "description": "Modular AI engine adapter capability metadata."
+    }
+  }
+}

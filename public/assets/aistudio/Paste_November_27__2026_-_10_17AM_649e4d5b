@@ -1,0 +1,1562 @@
+MASTER PROMPT — VOICELAB AI STUDIO
+
+Complete AI Voice Generation & Voice Cloning SaaS Platform
+
+Product Name: VoiceLab AI Studio
+Tagline: Your Voice. Your Creativity. Your AI.
+Platform: Web Application + Android-ready responsive platform
+Development Environment: Google AI Studio Build Mode
+Product Type: Commercial AI SaaS
+Primary Languages: Bengali (Bangladesh) + English
+AI Architecture: Custom, self-hosted, modular AI voice engine
+Core Principle: Real AI functionality, premium UI, scalable architecture, and unlimited free voice cloning for registered users.
+
+---
+
+1. PROJECT OVERVIEW
+
+Build a premium AI voice generation platform named VoiceLab AI Studio.
+
+The application should provide an experience comparable to modern AI voice platforms such as ElevenLabs, Cartesia, and other advanced AI voice-generation products.
+
+Create an independent, scalable architecture that allows the owner to integrate, deploy, replace, train, or fine-tune AI voice models without rebuilding the entire application.
+
+The platform must support:
+
+- AI Text-to-Speech
+- Unlimited Free Voice Cloning
+- Voice Library
+- Voice Design
+- Emotion and Style Control
+- Voice Changer
+- AI Dubbing
+- Audio Studio
+- Podcast Creation
+- Sound Effects
+- Speech Enhancement
+- Audio Download and Export
+- User Dashboard
+- Subscription and Credit System
+- Admin Dashboard
+- Developer API (future-ready)
+- Android-compatible interface
+
+The interface should look like a premium professional AI SaaS product, not a basic demo application.
+
+---
+
+2. DESIGN & UI/UX
+
+Create a modern, premium, futuristic, professional interface.
+
+Design Style
+
+- Premium dark mode as the default.
+- Optional light mode.
+- Black/charcoal background.
+- Subtle purple, blue, indigo and cyan accents.
+- Soft gradients.
+- Glassmorphism used carefully.
+- Rounded cards and panels.
+- Smooth micro-animations.
+- Professional typography.
+- Clean spacing.
+- Responsive mobile layouts.
+- Beautiful audio waveforms.
+- Animated audio playback visualizers.
+- Elegant loading states.
+- Skeleton loading.
+- Toast notifications.
+- Modal dialogs.
+- Sidebar navigation.
+- Premium dashboard cards.
+- Accessible controls and contrast.
+
+UI Requirements
+
+The interface must be responsive across:
+
+- Desktop
+- Laptop
+- Tablet
+- Android smartphones
+- Small mobile screens
+
+Do not simply shrink the desktop layout on mobile. Design a mobile-optimized experience.
+
+Use a consistent design system with:
+
+- Color tokens
+- Typography scale
+- Spacing system
+- Button styles
+- Input styles
+- Card styles
+- Modal styles
+- Navigation components
+- Audio player components
+- Loading states
+- Error states
+
+---
+
+3. AUTHENTICATION SYSTEM
+
+Create a complete authentication system.
+
+Features
+
+- Sign Up
+- Login
+- Google Authentication
+- Email Authentication
+- Password Reset
+- Email Verification
+- Logout
+- Session Management
+- User Profile
+- Account Settings
+- Delete Account
+
+User Profile
+
+Each user should have:
+
+- User ID
+- Name
+- Email
+- Profile image
+- Registration date
+- Subscription plan
+- Credits
+- Preferred language
+- Saved voices
+- Voice clones
+- Generated audio history
+- Usage statistics
+
+Use secure authentication.
+
+Do not expose API keys, secret credentials, or sensitive backend information to the frontend.
+
+---
+
+4. USER DASHBOARD
+
+Create an attractive dashboard with the following sections:
+
+Welcome Section
+
+Display:
+
+- Welcome message
+- User name
+- Account status
+- Subscription status
+- Available credits
+- Quick actions
+
+Quick Action Cards
+
+1. Text to Speech
+2. Clone My Voice — FREE
+3. Voice Library
+4. Voice Design
+5. Voice Changer
+6. AI Dubbing
+7. Audio Studio
+8. Sound Effects
+
+Recent Activity
+
+Display:
+
+- Recent audio generations
+- Recently used voices
+- Recent voice clones
+- Download history
+- Creation date
+- Duration
+- Generation status
+
+Statistics
+
+- Total generated audio
+- Total voice profiles
+- Total audio downloads
+- Total usage
+- Recent activity
+
+---
+
+5. TEXT-TO-SPEECH ENGINE
+
+Create a professional Text-to-Speech generation interface.
+
+Input
+
+Provide a large text editor supporting:
+
+- Bengali text
+- Bangladeshi Bengali
+- English
+- Multilingual text where supported
+- Paragraphs
+- Long-form scripts
+- Text paste
+- Text clearing
+- Character counting
+- Word counting
+
+Voice Selection
+
+Users can select:
+
+- Male voices
+- Female voices
+- Deep voices
+- Soft voices
+- Emotional voices
+- Professional voices
+- Narrator voices
+- Storytelling voices
+- Conversational voices
+- Young adult voices
+- Mature voices
+
+Voice Controls
+
+Include:
+
+- Stability
+- Similarity
+- Speed
+- Pitch, if supported
+- Style intensity
+- Emotion
+- Speaker style
+- Pronunciation settings
+- Pause control
+
+Emotion Presets
+
+- Neutral
+- Happy
+- Sad
+- Emotional
+- Heartbroken
+- Angry
+- Calm
+- Whisper
+- Romantic
+- Motivational
+- Excited
+- Fearful
+- Storytelling
+- Professional
+- News Presenter
+- Cinematic Narration
+
+Only display controls that the selected AI model actually supports.
+
+Generate Button
+
+When the user clicks Generate:
+
+1. Validate input.
+2. Check credits and permissions.
+3. Submit the generation job to the backend.
+4. Display real generation progress/status.
+5. Process audio through the configured AI model.
+6. Return the generated audio.
+7. Display the audio player.
+8. Allow downloading.
+9. Save generation history.
+10. Deduct credits according to the configured billing rules.
+
+Never display fake generated audio.
+
+Never simulate a successful AI generation if the actual model or backend is unavailable.
+
+If the AI engine is not configured, display a clear message explaining that the engine is not connected.
+
+---
+
+6. UNLIMITED FREE VOICE CLONING — CORE FEATURE
+
+This is one of the most important features of VoiceLab AI Studio.
+
+User Policy
+
+Voice cloning must be FREE for all registered users.
+
+Unlimited Free Cloning Requirements
+
+- No credits required.
+- Zero credit deduction.
+- No monthly cloning quota.
+- No weekly cloning quota.
+- No fixed number of voice profiles.
+- No paid subscription required.
+- No payment required to clone a voice.
+- Users can create multiple voice profiles.
+- Users can upload voice samples.
+- Users can record audio directly.
+- Users can create a new voice clone whenever they want.
+- Users can save their cloned voices.
+- Users can preview cloned voices.
+- Users can rename voice profiles.
+- Users can manage voice profiles.
+- Users can delete voice profiles.
+- Users can use supported languages.
+- Voice cloning must be available to Free, Pro, and Premium users.
+
+Important UI Label
+
+Display this clearly:
+
+UNLIMITED FREE VOICE CLONING
+
+Additional labels:
+
+- 100% Free
+- No Credits Required
+- No Monthly Limit
+- Create Unlimited Voice Profiles
+
+Do not show a credit cost beside the cloning feature.
+
+Do not deduct credits when a user creates, uploads, records, processes, or saves a voice clone.
+
+---
+
+6.1 VOICE CLONING INTERFACE
+
+Create a premium voice cloning page.
+
+Step 1: Choose Input Method
+
+Provide two options:
+
+Option A — Upload Voice
+
+Allow users to upload:
+
+- MP3
+- WAV
+- M4A
+- Other supported audio formats
+
+Display:
+
+- File name
+- File size
+- Audio duration
+- Audio preview
+- Remove file button
+
+Option B — Record Voice
+
+Allow users to record audio directly from their microphone.
+
+Features:
+
+- Microphone permission
+- Recording indicator
+- Start recording
+- Pause recording, if supported
+- Stop recording
+- Playback
+- Re-record
+- Save recording
+
+---
+
+6.2 VOICE SAMPLE GUIDANCE
+
+Display professional instructions:
+
+For best voice cloning results:
+
+- Use a clear voice recording.
+- Avoid background noise.
+- Avoid music.
+- Avoid multiple speakers.
+- Speak naturally.
+- Use a good microphone if possible.
+- Maintain consistent speaking volume.
+- Use a sample long enough for the selected model.
+- Follow the selected model's sample requirements.
+
+Show sample-quality analysis when supported:
+
+- Noise level
+- Duration
+- Speech detection
+- Audio quality
+- Clarity
+- Sample suitability
+
+If the sample is unsuitable, explain the problem and provide recommendations.
+
+Do not pretend to perform audio quality analysis when no actual analysis engine is connected.
+
+---
+
+6.3 CLONING PROCESS
+
+When a user creates a clone:
+
+1. Upload or record the voice sample.
+2. Validate the file.
+3. Validate duration and format.
+4. Run audio quality checks.
+5. Confirm the user's consent and voice ownership.
+6. Create a cloning job.
+7. Send the job to the AI voice cloning backend.
+8. Display processing status.
+9. Generate the voice profile.
+10. Save the profile securely.
+11. Allow the user to preview the voice.
+12. Add the profile to My Voices.
+
+Possible statuses:
+
+- Uploading
+- Validating
+- Processing
+- Creating Voice
+- Completed
+- Failed
+
+Provide clear error messages.
+
+---
+
+6.4 MY CLONED VOICES
+
+Create a dedicated page named:
+
+My Voices
+
+Users should be able to:
+
+- View all cloned voice profiles.
+- Search profiles.
+- Sort by creation date.
+- Preview voices.
+- Rename profiles.
+- Edit descriptions.
+- Change profile images.
+- View language information.
+- View creation date.
+- View sample details.
+- Use a voice in Text-to-Speech.
+- Use a voice in supported tools.
+- Delete profiles.
+
+Each profile card should contain:
+
+- Voice name
+- Profile image or avatar
+- Language
+- Voice characteristics
+- Creation date
+- Preview button
+- Use Voice button
+- More options menu
+
+Do not impose a fixed maximum number of saved voice profiles.
+
+---
+
+6.5 VOICE CLONING COST ARCHITECTURE
+
+Voice cloning is free to the user, but AI inference still requires infrastructure.
+
+Implement a cost-efficient backend architecture:
+
+- Dedicated voice-cloning worker service.
+- Queue-based processing.
+- GPU inference.
+- Job scheduling.
+- Resource monitoring.
+- Automatic cleanup of temporary files.
+- Storage optimization.
+- Audio compression where appropriate.
+- Duplicate-job prevention.
+- Retry handling.
+- Caching where technically appropriate.
+- Worker autoscaling where supported.
+- User-level abuse detection.
+- Fair-use protection against automated abuse.
+- Configurable concurrency.
+- Administrative infrastructure controls.
+
+Important distinction
+
+Unlimited free cloning means:
+
+No user-facing credit deduction, no monthly clone quota, and no fixed clone-profile limit.
+
+It does not mean unlimited simultaneous GPU processing or unlimited storage resources.
+
+Use technical fair-use and abuse protections without introducing an arbitrary clone quota for ordinary legitimate users.
+
+---
+
+7. VOICE CLONING SAFETY & CONSENT
+
+Implement responsible voice cloning.
+
+Before cloning, require the user to confirm:
+
+- They own the voice, or
+- They have permission from the speaker to clone the voice.
+
+Include:
+
+- Consent checkbox
+- Clear consent language
+- User report system
+- Abuse reporting
+- Profile deletion
+- Audio sample deletion
+- Data deletion workflow
+- Unauthorized impersonation prevention
+- Appropriate restrictions against fraudulent use
+
+Do not allow cloning a person's voice for impersonation, fraud, harassment, or deception without authorization.
+
+Users should be able to delete their clone and associated uploaded source samples.
+
+Voice samples must be securely stored.
+
+Do not expose voice samples publicly by default.
+
+---
+
+8. VOICE LIBRARY
+
+Create a searchable Voice Library.
+
+Categories
+
+- Bengali
+- Bangladeshi Bengali
+- English
+- Male
+- Female
+- Narrator
+- Emotional
+- Professional
+- Storytelling
+- Cinematic
+- Calm
+- Energetic
+- Deep
+- Soft
+- News
+- Podcast
+
+Features
+
+- Search
+- Filters
+- Favorites
+- Preview
+- Voice details
+- Sample audio
+- Voice description
+- Language
+- Gender/style descriptors
+- Use Voice
+- Add to Favorites
+
+Use only legally licensed voice assets.
+
+Voice library content should be controlled by the admin.
+
+---
+
+9. VOICE DESIGN
+
+Create an AI Voice Design module.
+
+Users should be able to describe a voice using text.
+
+Example:
+
+"Create a deep, emotional Bangladeshi male voice. Slow speaking pace, natural pronunciation, warm tone, cinematic storytelling, slight sadness, realistic breathing, and meaningful pauses."
+
+Allow users to define:
+
+- Gender presentation
+- Age characteristics
+- Accent
+- Language
+- Tone
+- Pitch
+- Speaking speed
+- Emotion
+- Personality
+- Voice description
+
+The backend should generate a voice or voice configuration only when the selected model supports voice design.
+
+Users should be able to preview the generated voice.
+
+Save supported designs to My Voices.
+
+---
+
+10. VOICE CHANGER
+
+Create a Voice Changer module.
+
+Input
+
+- Upload audio
+- Record audio
+
+Voice Selection
+
+- Library voice
+- User's cloned voice
+- Supported designed voice
+
+Controls
+
+- Preserve emotion
+- Preserve speaking style
+- Similarity
+- Voice transformation strength
+- Audio quality
+- Noise reduction, if supported
+
+Output
+
+- Original audio preview
+- Converted audio preview
+- Download
+- Save to history
+
+Use an actual voice conversion model.
+
+Do not simulate voice conversion using a simple audio filter and label it AI Voice Conversion.
+
+---
+
+11. AI DUBBING
+
+Create an AI Dubbing Studio.
+
+Features:
+
+- Upload video
+- Upload audio
+- Detect speech
+- Speech transcription
+- Translation
+- Voice selection
+- Voice cloning, if authorized
+- Generate dubbed audio
+- Timing alignment
+- Subtitle generation
+- Preview
+- Export
+
+Supported language pairs must depend on actual models.
+
+Include:
+
+- Original language
+- Target language
+- Speaker detection
+- Speaker assignment
+- Subtitle editor
+- Timeline
+- Audio synchronization
+
+Do not claim perfect lip-sync unless an actual lip-sync engine is connected.
+
+---
+
+12. AUDIO STUDIO
+
+Create a professional Audio Studio.
+
+Features
+
+- Audio playback
+- Waveform
+- Trim
+- Split
+- Merge
+- Fade in
+- Fade out
+- Volume
+- Silence removal
+- Noise reduction
+- Audio normalization
+- Speed adjustment
+- Audio export
+
+Supported export formats:
+
+- WAV
+- MP3
+- Other formats supported by the backend
+
+Allow users to download generated audio.
+
+Implement actual processing functionality.
+
+---
+
+13. PODCAST STUDIO
+
+Create an AI Podcast Creation tool.
+
+Features
+
+- Single speaker
+- Multiple speakers
+- AI conversation
+- Speaker selection
+- Cloned voices
+- Voice library
+- Script editor
+- Dialogue editor
+- Speaker assignment
+- Pauses
+- Emotion
+- Audio generation
+- Background music upload
+- Audio mixing
+- Export
+
+Example:
+
+Speaker 1: Welcome to today's podcast.
+
+Speaker 2: Thank you. Today we are discussing artificial intelligence.
+
+Allow users to assign different voices to different speakers.
+
+---
+
+14. SOUND EFFECT GENERATOR
+
+Create a Sound Effects Generator.
+
+Users can describe sounds using text.
+
+Examples:
+
+- Rain falling on a rooftop.
+- A cinematic thunderstorm.
+- Footsteps in a dark hallway.
+- Ocean waves.
+- A futuristic machine.
+- A quiet forest.
+
+Controls:
+
+- Duration
+- Intensity
+- Style
+- Variation
+- Preview
+- Download
+
+Connect to an actual sound-generation model or API.
+
+If no model is configured, show an unavailable state instead of generating fake audio.
+
+---
+
+15. SPEECH ENHANCEMENT
+
+Create a Speech Enhancement tool.
+
+Features:
+
+- Noise reduction
+- Voice clarity enhancement
+- Background noise removal
+- Audio restoration
+- Volume normalization
+- Speech isolation
+- Recording enhancement
+
+Use real audio-processing models or backend services.
+
+---
+
+16. AUDIO HISTORY
+
+Create a complete generation history.
+
+Each record should include:
+
+- Audio title
+- Tool used
+- Voice used
+- Creation date
+- Duration
+- Generation status
+- Language
+- Download link
+- Delete option
+- Favorite option
+
+Allow:
+
+- Search
+- Sorting
+- Filtering
+- Download
+- Playback
+- Deletion
+
+---
+
+17. CREDIT SYSTEM
+
+Voice cloning must be completely excluded from the credit system.
+
+Voice Cloning
+
+- Cost: 0 credits
+- Unlimited user profiles
+- Unlimited clone creation
+- No monthly quota
+- No subscription requirement
+
+Other AI Features
+
+Allow the admin to configure costs for:
+
+- Text-to-Speech
+- Voice Design
+- Voice Changer
+- AI Dubbing
+- Sound Effects
+- Speech Enhancement
+- Podcast Generation
+
+Credits should be configurable from the admin panel.
+
+Do not hardcode credit prices.
+
+Credit Security
+
+- Credits must be managed server-side.
+- Never trust frontend credit calculations.
+- Prevent double deductions.
+- Prevent duplicate billing.
+- Use transactional billing.
+- Record every transaction.
+- Implement refunds for eligible failed jobs.
+- Use idempotency for generation requests.
+
+---
+
+18. SUBSCRIPTION SYSTEM
+
+Create configurable subscription plans.
+
+Example plans:
+
+Free
+
+- Free account
+- Unlimited free voice cloning
+- Voice profile management
+- Limited Text-to-Speech credits
+- Basic tools according to configuration
+
+Creator
+
+- Higher generation credits
+- Advanced voice controls
+- Faster processing priority
+- More export options
+
+Pro
+
+- Higher usage limits
+- Premium models
+- Professional workflows
+- Priority queue
+
+Studio
+
+- Team features
+- Multiple seats
+- Shared projects
+- Higher capacity
+
+Important
+
+Unlimited Free Voice Cloning must remain free on every plan.
+
+The admin can configure all other plan features and prices.
+
+Do not force a paid subscription to create a voice clone.
+
+---
+
+19. PAYMENT SYSTEM
+
+Build a payment-ready architecture.
+
+Potential integrations:
+
+- Stripe
+- Paddle
+- Local payment gateways
+- Bangladesh-compatible payment options where supported
+
+Payment features:
+
+- Subscription purchase
+- Credit purchase
+- Billing history
+- Payment status
+- Invoice
+- Subscription cancellation
+- Renewal management
+
+Do not pretend payments are completed without a real payment gateway.
+
+Use secure server-side payment verification.
+
+---
+
+20. ADMIN DASHBOARD
+
+Create a powerful administration dashboard.
+
+Statistics
+
+- Total users
+- Active users
+- New registrations
+- Total audio generations
+- Total voice clones
+- GPU usage
+- Queue status
+- Storage usage
+- Revenue
+- Subscription statistics
+- Failed jobs
+
+User Management
+
+- View users
+- Search users
+- User profile
+- Account status
+- Subscription
+- Credit balance
+- Usage history
+- Suspend abusive accounts
+- Manage reports
+
+AI Engine Management
+
+- Add AI model
+- Configure model
+- Enable/disable model
+- Model health status
+- API configuration
+- GPU worker status
+- Queue status
+- Test model
+- Error logs
+
+Voice Library Management
+
+- Add voice
+- Edit voice
+- Remove voice
+- Upload voice sample
+- Configure categories
+- Manage visibility
+
+Pricing & Credits
+
+- Create plans
+- Edit plans
+- Configure credits
+- Configure generation costs
+- Manage discounts
+
+Voice Cloning Management
+
+- View cloning jobs
+- View processing status
+- Manage reported clones
+- Review abuse reports
+- Manage consent records
+- Delete reported profiles where appropriate
+- Monitor infrastructure usage
+
+Settings
+
+- App name
+- Logo
+- Brand colors
+- Languages
+- Model settings
+- Payment configuration
+- Storage settings
+- Usage policies
+- Maintenance mode
+
+---
+
+21. TECHNICAL ARCHITECTURE
+
+Use a modular architecture.
+
+Frontend
+
+- React
+- TypeScript
+- Modern component architecture
+- Tailwind CSS
+- Responsive design
+- Audio player
+- Waveform visualization
+- State management
+- API integration
+
+Backend
+
+- Python
+- FastAPI
+- REST API
+- WebSocket for real-time job status where appropriate
+- Authentication middleware
+- Job management
+- Credit management
+- Voice profile management
+
+Database
+
+PostgreSQL.
+
+Core entities:
+
+- Users
+- User Profiles
+- Subscriptions
+- Credit Balances
+- Credit Transactions
+- Voice Profiles
+- Voice Samples
+- Voice Cloning Jobs
+- Audio Generations
+- Audio Files
+- Voice Library
+- Favorites
+- Projects
+- Payments
+- Usage Logs
+- Abuse Reports
+- Consent Records
+- API Keys
+- Admin Settings
+
+Queue
+
+- Redis
+- Celery or a suitable job queue
+
+Use background jobs for:
+
+- Voice cloning
+- Text-to-Speech
+- Voice conversion
+- Dubbing
+- Sound generation
+- Audio enhancement
+
+Storage
+
+Use secure object storage for:
+
+- Audio uploads
+- Voice samples
+- Cloned voice assets
+- Generated audio
+- Exported files
+
+Temporary uploads should be automatically cleaned up according to configured retention policies.
+
+Infrastructure
+
+Support:
+
+- Cloud hosting
+- Dedicated GPU servers
+- Containerized AI workers
+- Docker
+- Autoscaling where available
+- Monitoring
+- Logging
+- Error reporting
+
+---
+
+22. CUSTOM AI VOICE ENGINE
+
+The application must not be permanently dependent on a single third-party API.
+
+Create a modular AI engine adapter system.
+
+Example architecture:
+
+AI Engine Interface:
+
+- Text-to-Speech
+- Voice Cloning
+- Voice Design
+- Voice Conversion
+- Speech Recognition
+- Translation
+- Dubbing
+- Sound Generation
+- Speech Enhancement
+
+Each model should be integrated through an adapter.
+
+Example:
+
+Model Adapter A
+Model Adapter B
+Model Adapter C
+Self-Hosted Model
+External API Model
+
+The admin should be able to change the configured model without rebuilding the entire app.
+
+Model Requirements
+
+Evaluate AI models based on:
+
+- Commercial license
+- Bengali language support
+- Bangladeshi Bengali pronunciation
+- English quality
+- Voice cloning
+- Voice similarity
+- Emotion control
+- Streaming support
+- GPU requirements
+- Model size
+- Latency
+- Deployment requirements
+
+Do not use a model commercially without checking its license.
+
+Do not claim that a model supports Bengali voice cloning until it has been verified and tested.
+
+---
+
+23. BANGLA VOICE QUALITY
+
+Bangla is a core feature.
+
+Prioritize:
+
+- Natural Bangladeshi Bengali pronunciation
+- Standard Bangladesh accent
+- Natural speech rhythm
+- Emotion
+- Pauses
+- Accurate punctuation interpretation
+- Clear pronunciation
+- Storytelling
+- Conversational style
+- Emotional narration
+
+Provide optional pronunciation correction.
+
+Examples of voice presets:
+
+- Bangladeshi Male Narrator
+- Bangladeshi Female Narrator
+- Emotional Male
+- Emotional Female
+- Deep Cinematic Male
+- Soft Female
+- Motivational Speaker
+- News Presenter
+- Storytelling Voice
+
+Do not label a voice Bangladeshi if the actual pronunciation is not appropriate.
+
+---
+
+24. SECURITY
+
+Implement:
+
+- Secure authentication
+- Password protection
+- Rate limiting
+- API key protection
+- Server-side authorization
+- Input validation
+- File validation
+- Malware scanning where available
+- Secure storage
+- Private user audio
+- User ownership validation
+- Role-based permissions
+- Admin permissions
+- Audit logs
+- CSRF protection where applicable
+- Secure payment verification
+
+Never expose:
+
+- API secrets
+- Database credentials
+- Private voice samples
+- Admin credentials
+- Server secrets
+
+---
+
+25. API SYSTEM
+
+Prepare a future Developer API.
+
+Possible endpoints:
+
+- POST /api/v1/tts
+- POST /api/v1/voice-clone
+- GET /api/v1/voices
+- GET /api/v1/voice-clones
+- POST /api/v1/voice-conversion
+- POST /api/v1/dubbing
+- GET /api/v1/jobs/{job_id}
+- GET /api/v1/audio/{audio_id}
+
+Implement API authentication securely.
+
+Create API documentation using OpenAPI/Swagger.
+
+Only expose features that are genuinely implemented.
+
+---
+
+26. DATABASE & USER DATA
+
+Create proper database migrations.
+
+Ensure:
+
+- User data isolation.
+- Secure voice sample storage.
+- Voice ownership verification.
+- Private generated audio.
+- Deletion workflows.
+- Consent records.
+- Job history.
+- Credit history.
+- Subscription history.
+
+When a user deletes a voice clone:
+
+- Delete the voice profile.
+- Delete the uploaded sample where retained.
+- Delete associated assets where technically possible.
+- Remove it from the user's library.
+- Invalidate related access permissions.
+- Update the deletion status.
+
+Provide a clear privacy policy and voice-data policy.
+
+---
+
+27. ERROR HANDLING
+
+Implement proper error states.
+
+Examples:
+
+- Model unavailable
+- GPU worker unavailable
+- Invalid audio
+- Unsupported language
+- File too large
+- Audio duration unsupported
+- Queue overloaded
+- Generation failed
+- Insufficient credits
+- Storage error
+- Network error
+
+Errors must be understandable to ordinary users.
+
+Do not expose internal server traces or sensitive backend errors.
+
+---
+
+28. PERFORMANCE
+
+Optimize for:
+
+- Fast page loading
+- Lazy loading
+- Efficient audio streaming
+- Background processing
+- Queue-based jobs
+- Responsive design
+- Audio compression
+- Database indexing
+- Caching
+- GPU resource optimization
+
+Voice cloning jobs should not freeze the frontend.
+
+Users should be able to navigate away and return to their job status.
+
+---
+
+29. MOBILE & ANDROID EXPERIENCE
+
+Build the web platform mobile-first and Android-friendly.
+
+The interface must be comfortable to use on mobile devices.
+
+Mobile features:
+
+- Bottom navigation
+- Touch-friendly controls
+- Upload from phone storage
+- Microphone recording
+- Audio playback
+- Download audio
+- Responsive voice cards
+- Mobile dashboard
+- Mobile voice cloning workflow
+
+Prepare the architecture for a future native Android application.
+
+Do not require the user to have a desktop computer to create voice clones.
+
+---
+
+30. DEVELOPMENT PHASES
+
+Do not attempt to build every module simultaneously without a working foundation.
+
+Develop the project in phases.
+
+PHASE 1 — Foundation
+
+- Project setup
+- Design system
+- Responsive UI
+- Authentication
+- Dashboard
+- Database
+- Backend API
+- User profile
+
+PHASE 2 — FREE VOICE CLONING
+
+- Upload sample
+- Microphone recording
+- Audio validation
+- Consent
+- Cloning queue
+- AI model integration
+- Unlimited free cloning
+- My Voices
+- Preview
+- Rename
+- Delete
+- Secure storage
+
+PHASE 3 — TEXT-TO-SPEECH
+
+- Text editor
+- Voice selection
+- Bengali support
+- English support
+- Emotion controls
+- Generation
+- Audio player
+- Download
+- History
+- Credit management
+
+PHASE 4 — VOICE LIBRARY
+
+- Voice catalog
+- Search
+- Filters
+- Categories
+- Favorites
+- Preview
+
+PHASE 5 — ADVANCED FEATURES
+
+- Voice Design
+- Voice Changer
+- Dubbing
+- Podcast Studio
+- Audio Editor
+- Sound Effects
+- Speech Enhancement
+
+PHASE 6 — SAAS
+
+- Plans
+- Subscription
+- Payment
+- Credit purchases
+- Admin dashboard
+- Analytics
+- User management
+
+PHASE 7 — ANDROID
+
+- Android app architecture
+- Mobile authentication
+- Audio recording
+- Voice cloning
+- TTS
+- Audio playback
+- Downloads
+- Push notifications where supported
+
+---
+
+31. DEVELOPMENT RULES
+
+These requirements are mandatory.
+
+1. Build a real functional application.
+2. Do not create a static mockup only.
+3. Do not use fake audio.
+4. Do not simulate successful cloning.
+5. Do not simulate successful TTS generation.
+6. Do not show fake job progress.
+7. Do not use placeholder buttons that do nothing.
+8. Every button must perform its intended action or clearly indicate that the feature is not yet available.
+9. Connect the frontend to a real backend.
+10. Implement proper database operations.
+11. Use a modular architecture.
+12. Keep the AI engine replaceable.
+13. Secure user data.
+14. Secure API credentials.
+15. Implement proper loading states.
+16. Implement proper error states.
+17. Use responsive design.
+18. Maintain clean and reusable code.
+19. Build the project in manageable phases.
+20. Test every major feature.
+21. Document environment variables.
+22. Document deployment.
+23. Document GPU/model setup.
+24. Clearly distinguish implemented features from planned features.
+
+---
+
+32. FIRST BUILD INSTRUCTION FOR GOOGLE AI STUDIO
+
+Start by building the first working version of VoiceLab AI Studio.
+
+Prioritize:
+
+1. Premium responsive UI.
+2. Authentication.
+3. Dashboard.
+4. Navigation.
+5. User profile.
+6. Backend foundation.
+7. Database schema.
+8. Unlimited Free Voice Cloning interface.
+9. Upload audio.
+10. Record audio from microphone.
+11. Voice sample validation.
+12. Voice cloning consent.
+13. Voice profile management.
+14. My Voices page.
+15. AI engine adapter architecture.
+16. Background processing architecture.
+17. Text-to-Speech interface.
+18. Audio player.
+19. Generation history.
+20. Admin dashboard foundation.
+
+Do not try to pretend that a self-hosted AI model is already deployed.
+
+If a real AI model has not yet been connected:
+
+- Build the frontend.
+- Build the backend API.
+- Build the database.
+- Build the model adapter.
+- Build the job queue.
+- Build the upload and recording functionality.
+- Build the voice profile system.
+- Display an honest engine status.
+- Prepare the application for the real AI model integration.
+
+Then provide a clear implementation report containing:
+
+- What has been built
+- What is working
+- What is not working yet
+- What backend services are required
+- Which AI models need to be deployed
+- Which environment variables are required
+- Which GPU resources are required
+- How to run the project
+- How to deploy it
+
+---
+
+33. FINAL PRODUCT GOAL
+
+The final product should be a premium, scalable AI voice platform.
+
+It should allow ordinary users and creators to:
+
+- Write text.
+- Generate natural AI speech.
+- Create unlimited free voice clones.
+- Upload voice recordings.
+- Record their own voice.
+- Save multiple voice profiles.
+- Use cloned voices for supported AI tools.
+- Control emotions and voice styles.
+- Convert voices.
+- Create dubbed videos.
+- Create podcasts.
+- Generate sound effects.
+- Enhance recordings.
+- Edit and download audio.
+- Manage their projects.
+
+The platform should feel professional, reliable, fast, modern, and premium.
+
+Core Brand Promise
+
+VoiceLab AI Studio
+
+Your Voice. Your Creativity. Your AI.
+
+Unlimited Free Voice Cloning. Powerful AI Voice Creation. One Studio.
+
+Build it as a real, modular, production-oriented SaaS application—not merely a visual prototype.

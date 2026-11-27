@@ -1,0 +1,421 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default-Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Reusable Security Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'polashnxbd@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUser(data) {
+      return data.keys().hasAll([
+        'uid', 'name', 'email', 'plan', 'credits', 'preferredLanguage',
+        'totalGenerations', 'totalDownloads', 'suspended', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'uid', 'name', 'email', 'photoURL', 'plan', 'credits', 'preferredLanguage',
+        'totalGenerations', 'totalDownloads', 'suspended', 'createdAt', 'updatedAt'
+      ])
+      && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128
+      && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+      && data.email is string && data.email.size() >= 3 && data.email.size() <= 200
+      && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+      && data.plan in ['free', 'creator', 'pro', 'studio']
+      && data.credits is number && data.credits >= 0 && data.credits <= 10000000
+      && data.preferredLanguage in ['bn-BD', 'en-US']
+      && data.totalGenerations is number && data.totalGenerations >= 0
+      && data.totalDownloads is number && data.totalDownloads >= 0
+      && data.suspended is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidVoiceProfile(data) {
+      return data.keys().hasAll([
+        'ownerId', 'name', 'language', 'sampleId', 'sampleFileName',
+        'sampleDurationSec', 'sampleSizeBytes', 'status', 'consentConfirmed',
+        'isFavorite', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'name', 'description', 'language', 'characteristics', 'avatarUrl',
+        'sampleId', 'sampleFileName', 'sampleDurationSec', 'sampleSizeBytes',
+        'sampleMimeType', 'engineAdapterId', 'status', 'consentConfirmed',
+        'isFavorite', 'createdAt', 'updatedAt'
+      ])
+      && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+      && data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+      && (!('description' in data) || (data.description is string && data.description.size() <= 500))
+      && data.language in ['bn-BD', 'en-US', 'multilingual']
+      && (!('characteristics' in data) || (data.characteristics is list && data.characteristics.size() <= 8 && (data.characteristics.size() == 0 || data.characteristics[0] is string)))
+      && (!('avatarUrl' in data) || (data.avatarUrl is string && data.avatarUrl.size() <= 500))
+      && data.sampleId is string && data.sampleId.size() >= 1 && data.sampleId.size() <= 128
+      && data.sampleFileName is string && data.sampleFileName.size() >= 1 && data.sampleFileName.size() <= 200
+      && data.sampleDurationSec is number && data.sampleDurationSec >= 0 && data.sampleDurationSec <= 3600
+      && data.sampleSizeBytes is number && data.sampleSizeBytes >= 0 && data.sampleSizeBytes <= 104857600
+      && (!('sampleMimeType' in data) || (data.sampleMimeType is string && data.sampleMimeType.size() <= 100))
+      && (!('engineAdapterId' in data) || (data.engineAdapterId is string && data.engineAdapterId.size() <= 100))
+      && data.status in ['validating', 'queued', 'awaiting_engine', 'completed', 'failed']
+      && data.consentConfirmed is bool
+      && data.isFavorite is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidConsentRecord(data) {
+      return data.keys().hasAll(['ownerId', 'voiceId', 'speakerOwnership', 'consentTextVersion', 'confirmedAt'])
+      && data.keys().hasOnly(['ownerId', 'voiceId', 'speakerOwnership', 'consentTextVersion', 'confirmedAt'])
+      && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+      && data.voiceId is string && data.voiceId.size() >= 1 && data.voiceId.size() <= 128
+      && data.speakerOwnership in ['self', 'authorized']
+      && data.consentTextVersion is string && data.consentTextVersion.size() >= 1 && data.consentTextVersion.size() <= 40
+      && data.confirmedAt is timestamp;
+    }
+
+    function isValidAudioGeneration(data) {
+      return data.keys().hasAll([
+        'ownerId', 'title', 'tool', 'voiceName', 'language',
+        'durationSec', 'creditsCost', 'status', 'isFavorite', 'createdAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerId', 'title', 'tool', 'voiceId', 'voiceName', 'language',
+        'textPreview', 'durationSec', 'creditsCost', 'status', 'audioUrl',
+        'isFavorite', 'createdAt'
+      ])
+      && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+      && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+      && data.tool in ['tts', 'voice_changer', 'dubbing', 'podcast', 'sound_fx', 'speech_enhance', 'audio_studio']
+      && (!('voiceId' in data) || (data.voiceId is string && data.voiceId.size() <= 128))
+      && data.voiceName is string && data.voiceName.size() >= 1 && data.voiceName.size() <= 120
+      && data.language is string && data.language.size() >= 1 && data.language.size() <= 32
+      && (!('textPreview' in data) || (data.textPreview is string && data.textPreview.size() <= 500))
+      && data.durationSec is number && data.durationSec >= 0 && data.durationSec <= 7200
+      && data.creditsCost is number && data.creditsCost >= 0 && data.creditsCost <= 100000
+      && data.status in ['queued', 'processing', 'awaiting_engine', 'completed', 'failed']
+      && (!('audioUrl' in data) || (data.audioUrl is string && data.audioUrl.size() <= 500))
+      && data.isFavorite is bool
+      && data.createdAt is timestamp;
+    }
+
+    function isValidLibraryVoice(data) {
+      return data.keys().hasAll([
+        'name', 'description', 'language', 'category', 'gender',
+        'style', 'isPublic', 'createdAt', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'name', 'description', 'language', 'category', 'gender',
+        'style', 'avatarUrl', 'sampleUrl', 'engineId', 'isPublic',
+        'createdAt', 'updatedAt'
+      ])
+      && data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+      && data.description is string && data.description.size() >= 1 && data.description.size() <= 500
+      && data.language is string && data.language.size() >= 1 && data.language.size() <= 40
+      && data.category is string && data.category.size() >= 1 && data.category.size() <= 60
+      && data.gender is string && data.gender.size() >= 1 && data.gender.size() <= 30
+      && data.style is string && data.style.size() >= 1 && data.style.size() <= 60
+      && (!('avatarUrl' in data) || (data.avatarUrl is string && data.avatarUrl.size() <= 500))
+      && (!('sampleUrl' in data) || (data.sampleUrl is string && data.sampleUrl.size() <= 500))
+      && (!('engineId' in data) || (data.engineId is string && data.engineId.size() <= 100))
+      && data.isPublic is bool
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidFavorite(data) {
+      return data.keys().hasAll(['ownerId', 'libraryVoiceId', 'createdAt'])
+      && data.keys().hasOnly(['ownerId', 'libraryVoiceId', 'createdAt'])
+      && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+      && data.libraryVoiceId is string && data.libraryVoiceId.size() >= 1 && data.libraryVoiceId.size() <= 128
+      && data.createdAt is timestamp;
+    }
+
+    function isValidCreditTx(data) {
+      return data.keys().hasAll(['ownerId', 'type', 'amount', 'description', 'createdAt'])
+      && data.keys().hasOnly(['ownerId', 'type', 'amount', 'description', 'referenceId', 'createdAt'])
+      && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+      && data.type in ['signup_bonus', 'generation_debit', 'refund', 'admin_adjustment']
+      && data.amount is number && data.amount >= -1000000 && data.amount <= 1000000
+      && data.description is string && data.description.size() >= 1 && data.description.size() <= 200
+      && (!('referenceId' in data) || (data.referenceId is string && data.referenceId.size() <= 128))
+      && data.createdAt is timestamp;
+    }
+
+    function isValidAbuseReport(data) {
+      return data.keys().hasAll(['reporterId', 'targetVoiceId', 'reason', 'status', 'createdAt', 'updatedAt'])
+      && data.keys().hasOnly(['reporterId', 'targetVoiceId', 'reason', 'details', 'status', 'createdAt', 'updatedAt'])
+      && data.reporterId is string && data.reporterId.size() >= 1 && data.reporterId.size() <= 128
+      && data.targetVoiceId is string && data.targetVoiceId.size() >= 1 && data.targetVoiceId.size() <= 128
+      && data.reason is string && data.reason.size() >= 3 && data.reason.size() <= 120
+      && (!('details' in data) || (data.details is string && data.details.size() <= 1000))
+      && data.status in ['open', 'reviewed', 'resolved']
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidAppSetting(data) {
+      return data.keys().hasAll(['appName', 'maintenanceMode', 'cloningCostCredits', 'ttsCostPer1kChars', 'updatedAt'])
+      && data.keys().hasOnly([
+        'appName', 'tagline', 'maintenanceMode', 'cloningCostCredits',
+        'ttsCostPer1kChars', 'voiceDesignCost', 'voiceChangerCost', 'dubbingCost',
+        'soundFxCost', 'podcastCost', 'speechEnhanceCost', 'updatedAt'
+      ])
+      && data.appName is string && data.appName.size() >= 1 && data.appName.size() <= 100
+      && (!('tagline' in data) || (data.tagline is string && data.tagline.size() <= 160))
+      && data.maintenanceMode is bool
+      && data.cloningCostCredits == 0
+      && data.ttsCostPer1kChars is number && data.ttsCostPer1kChars >= 0
+      && (!('voiceDesignCost' in data) || (data.voiceDesignCost is number && data.voiceDesignCost >= 0))
+      && (!('voiceChangerCost' in data) || (data.voiceChangerCost is number && data.voiceChangerCost >= 0))
+      && (!('dubbingCost' in data) || (data.dubbingCost is number && data.dubbingCost >= 0))
+      && (!('soundFxCost' in data) || (data.soundFxCost is number && data.soundFxCost >= 0))
+      && (!('podcastCost' in data) || (data.podcastCost is number && data.podcastCost >= 0))
+      && (!('speechEnhanceCost' in data) || (data.speechEnhanceCost is number && data.speechEnhanceCost >= 0))
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidAiEngine(data) {
+      return data.keys().hasAll([
+        'name', 'providerType', 'capabilities', 'enabled',
+        'supportsBangla', 'supportsCloning', 'supportsEmotion', 'status', 'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'name', 'providerType', 'capabilities', 'enabled',
+        'supportsBangla', 'supportsCloning', 'supportsEmotion', 'status', 'updatedAt'
+      ])
+      && data.name is string && data.name.size() >= 1 && data.name.size() <= 100
+      && data.providerType in ['self_hosted_fastapi', 'xtts_v2', 'fish_speech', 'f5_tts', 'cosyvoice', 'external_rest']
+      && data.capabilities is list && data.capabilities.size() <= 10 && (data.capabilities.size() == 0 || data.capabilities[0] is string)
+      && data.enabled is bool
+      && data.supportsBangla is bool
+      && data.supportsCloning is bool
+      && data.supportsEmotion is bool
+      && data.status in ['connected', 'not_configured', 'unreachable', 'disabled']
+      && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    match /test/connection {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    match /admins/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+      allow list, write: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isVerifiedUser()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUser(incoming())
+        && incoming().uid == request.auth.uid
+        && incoming().plan == 'free'
+        && incoming().credits == 1000
+        && incoming().suspended == false
+        && incoming().totalGenerations == 0
+        && incoming().totalDownloads == 0
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() || (
+            request.auth.uid == userId
+            && incoming().plan == existing().plan
+            && incoming().suspended == existing().suspended
+            && incoming().credits <= existing().credits
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'preferredLanguage', 'photoURL',
+              'totalGenerations', 'totalDownloads', 'credits', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /voiceProfiles/{voiceId} {
+      allow get: if isSignedIn() && isValidId(voiceId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(voiceId)
+        && isValidVoiceProfile(incoming())
+        && incoming().ownerId == request.auth.uid
+        && incoming().consentConfirmed == true
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(voiceId)
+        && isValidVoiceProfile(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'description', 'language', 'characteristics',
+              'avatarUrl', 'isFavorite', 'status', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(voiceId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /consentRecords/{recordId} {
+      allow get: if isSignedIn() && isValidId(recordId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(recordId)
+        && isValidConsentRecord(incoming())
+        && incoming().ownerId == request.auth.uid
+        && incoming().confirmedAt == request.time;
+      allow update: if false;
+      allow delete: if isVerifiedUser() && isValidId(recordId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /audioGenerations/{generationId} {
+      allow get: if isSignedIn() && isValidId(generationId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(generationId)
+        && isValidAudioGeneration(incoming())
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(generationId)
+        && isValidAudioGeneration(incoming())
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid
+            && (
+              (existing().status != 'completed' && existing().status != 'failed'
+                && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'audioUrl', 'durationSec', 'isFavorite']))
+              ||
+              (incoming().diff(existing()).affectedKeys().hasOnly(['isFavorite']))
+            )
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(generationId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /voiceLibrary/{libraryVoiceId} {
+      allow get: if isSignedIn() && isValidId(libraryVoiceId) && (existing().isPublic == true || isAdmin());
+      allow list: if isSignedIn() && (resource.data.isPublic == true || isAdmin());
+      allow create: if isAdmin()
+        && isValidId(libraryVoiceId)
+        && isValidLibraryVoice(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(libraryVoiceId)
+        && isValidLibraryVoice(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(libraryVoiceId);
+    }
+
+    match /favorites/{favoriteId} {
+      allow get: if isSignedIn() && isValidId(favoriteId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(favoriteId)
+        && isValidFavorite(incoming())
+        && incoming().ownerId == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isVerifiedUser() && isValidId(favoriteId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /creditTransactions/{txId} {
+      allow get: if isSignedIn() && isValidId(txId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(txId)
+        && isValidCreditTx(incoming())
+        && incoming().createdAt == request.time
+        && (
+          isAdmin() || (
+            incoming().ownerId == request.auth.uid
+            && incoming().type == 'generation_debit'
+            && incoming().amount <= 0
+          )
+        );
+      allow update, delete: if isAdmin() && isValidId(txId);
+    }
+
+    match /abuseReports/{reportId} {
+      allow get: if isSignedIn() && isValidId(reportId) && (existing().reporterId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.reporterId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser()
+        && isValidId(reportId)
+        && isValidAbuseReport(incoming())
+        && incoming().reporterId == request.auth.uid
+        && incoming().status == 'open'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(reportId)
+        && isValidAbuseReport(incoming())
+        && incoming().reporterId == existing().reporterId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(reportId);
+    }
+
+    match /appSettings/{settingId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isAdmin()
+        && isValidId(settingId)
+        && isValidAppSetting(incoming())
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(settingId);
+    }
+
+    match /aiEngines/{engineId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isAdmin()
+        && isValidId(engineId)
+        && isValidAiEngine(incoming())
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(engineId);
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "VoiceLab AI Studio",
+  "description": "AI Voice Generation & Unlimited Free Voice Cloning SaaS Platform supporting Bangladeshi Bengali and English.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
